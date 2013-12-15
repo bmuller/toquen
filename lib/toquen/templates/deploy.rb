@@ -12,6 +12,3 @@ set :ssh_options, { :keys => ["./mykey.pem"], :user => "ubuntu" }
 set :chef_cookbooks_path, 'kitchen/cookbooks'
 set :chef_data_bags_path, 'kitchen/data_bags'
 set :chef_roles_path, 'kitchen/roles'
-
-# This is the version of rubygems installed (for Chef)
-set :rubygems_version, "2.1.11"

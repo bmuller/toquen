@@ -3,10 +3,13 @@ require 'capistrano/console'
 
 desc "update local cache of servers and roles"
 task :update_roles do
+  load Pathname.new fetch(:deploy_config_path, 'config/deploy.rb')
   roles = Hash.new([])
 
-  aws = Toquen::AWSProxy.new fetch(:aws_access_key_id), fetch(:aws_secret_access_key)
+  aws = Toquen::AWSProxy.new
   aws.server_details.each do |details|
+    run_locally { info "Updating local details for #{details[:name]} (#{details[:external_ip]})" }
+
     open("#{fetch(:chef_data_bags_path)}/servers/#{details[:name]}.json", 'w') { |f|
       f.write JSON.dump(details)
     }
@@ -22,7 +25,7 @@ task :update_roles do
       f.write("set :filter, :roles => %w{server-#{details[:name]}}\n")
     }
   end
-  
+
   roles.keys.each do |name|
     open("config/deploy/#{name}.rb", 'w') { |f|
       f.write("# This file will be overwritten by toquen!  Don't put anything here.\n")
@@ -37,8 +40,9 @@ end
 
 desc "bootstrap a server so that it can run chef"
 task :bootstrap do
-  rgems = "rubygems-#{fetch(:rubygems_version)}"
+  rgems = "rubygems-#{fetch(:rubygems_version, '2.1.11')}"
   on roles(:all), in: :parallel do |host|
+    info "Bootstrapping #{host}..."
     code = <<-EOF
 #!/bin/bash
 if [ -e "/home/#{fetch(:ssh_options)[:user]}/bootstrap.lock" ]; then exit 0; fi
@@ -55,6 +59,7 @@ cd /usr/src/#{rgems}
 ruby setup.rb
 gem install --no-rdoc --no-ri chef bundler
 touch /home/#{fetch(:ssh_options)[:user]}/bootstrap.lock
+echo "Rebooting now, standby..."
 reboot
 EOF
     fname = "/home/#{fetch(:ssh_options)[:user]}/bootstrap.sh"
@@ -71,6 +76,7 @@ task :update_kitchen do
   key = fetch(:ssh_options)[:keys].first
 
   run_locally do
+    info "Building kitchen locally..."
     execute [
              "rm -rf #{lkitchen}", 
              "mkdir -p #{lkitchen}",
@@ -89,6 +95,7 @@ task :update_kitchen do
 
   on roles(:all), in: :parallel do |host|
     run_locally do
+      info "Sending kitchen to #{host}..."
       execute "rsync -avzk --delete -e 'ssh -i #{key}' #{lkitchen} #{user}@#{host}:/home/#{fetch(:ssh_options)[:user]}"
     end
   end
@@ -97,6 +104,7 @@ end
 desc "Run chef for servers"
 task :cook do
   on roles(:all), in: :parallel do |host|
+    info "Chef is now cooking on #{host}..."
     roles = host.properties.roles.reject { |r| r.to_s.start_with?('server-') }
     roles = roles.map { |r| "\"role[#{r}]\"" }.join(',')
     info "Roles for #{host}: #{roles}"
@@ -107,21 +115,19 @@ task :cook do
 end
 before :cook, :update_kitchen
 
-namespace :toquen do
 desc "install toquen capistrano setup to current directory"
-task :install do
-    unless Dir.exists?('config')
-      puts "Creating config directory..."
-      Dir.mkdir('config')
-    end
-    unless Dir.exists?('config/deploy')
-      puts "Creating config/deploy directory..."
-      Dir.mkdir('config/deploy')
-    end
-    if not File.exists?('config/deploy.rb')
-      puts "Initializing config/deploy.rb configuration file..."
-      FileUtils.cp File.expand_path("../templates/deploy.rb", __FILE__), 'config/deploy.rb'
-    end
+task :toquen_install do
+  unless Dir.exists?('config')
+    puts "Creating config directory..."
+    Dir.mkdir('config')
+  end
+  unless Dir.exists?('config/deploy')
+    puts "Creating config/deploy directory..."
+    Dir.mkdir('config/deploy')
+  end
+  if not File.exists?('config/deploy.rb')
+    puts "Initializing config/deploy.rb configuration file..."
+    FileUtils.cp File.expand_path("../templates/deploy.rb", __FILE__), 'config/deploy.rb'
   end
 end
   
@@ -129,7 +135,7 @@ module Capistrano
   module TaskEnhancements
     alias_method :original_default_tasks, :default_tasks
     def default_tasks
-      original_default_tasks + %w{toquen:install update_roles}
+      original_default_tasks + %w{toquen_install update_roles}
     end
   end
 end

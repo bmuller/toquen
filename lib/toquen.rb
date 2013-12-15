@@ -7,7 +7,7 @@ module Toquen
     attr_accessor :aws_roles_extractor
 
     def initialize
-      Toquen.config.aws_roles_extractor = lambda { |inst| (inst.tags["Roles"] || "").split }
+      @aws_roles_extractor = lambda { |inst| (inst.tags["Roles"] || "").split }
     end
   end
 

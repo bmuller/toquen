@@ -2,11 +2,24 @@ require 'aws'
 
 module Toquen
   class AWSProxy
-    def initialize(key_id, key)
-      AWS.config(:access_key_id => key_id, :secret_access_key => key)
+    def initialize
+      @key_id = fetch(:aws_access_key_id)
+      @key = fetch(:aws_secret_access_key)
+      @regions = fetch(:aws_regions, ['us-east-1'])
     end
 
     def server_details
+      filter @regions.map { |region| server_details_in(region) }.flatten
+    end
+
+    def filter(details)
+      details.select { |detail|
+        not detail[:name].nil? and detail[:roles].length > 0
+      }
+    end
+
+    def server_details_in(region)
+      AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
       AWS::EC2.new.instances.map do |i|
         {
           :id => i.tags["Name"],
@@ -17,5 +30,6 @@ module Toquen
         }
       end
     end
+
   end
 end

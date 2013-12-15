@@ -8,8 +8,8 @@ Gem::Specification.new do |gem|
   gem.version       = Toquen::VERSION
   gem.authors       = ["Brian Muller"]
   gem.email         = ["bamuller@gmail.com"]
-  gem.description   = "Capistrano + AWS + Chef-Solo"
-  gem.summary       = "Capistrano + AWS + Chef-Solo"
+  gem.description   = "Toquen: Capistrano + AWS + Chef-Solo"
+  gem.summary       = "Toquen: Capistrano + AWS + Chef-Solo"
   gem.homepage      = "https://github.com/bmuller/toquen"
 
   gem.files         = `git ls-files`.split($/)
@@ -18,4 +18,5 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.add_dependency('capistrano', '~> 3.0.1')
   gem.add_dependency('aws-sdk')
+  gem.add_development_dependency("rdoc")
 end
