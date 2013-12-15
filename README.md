@@ -18,7 +18,18 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Create Capfile:
+       require 'toquen'
+
+Then:
+	cap toquen:install
+
+Then edit config/deploy.rb and set everything.
+
+Additional options:
+
+Toquen.config.aws_roles_extractor = lambda { |inst| (inst.tags["Roles"] || "").split }
+
 
 ## Contributing
 

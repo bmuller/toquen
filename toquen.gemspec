@@ -8,8 +8,8 @@ Gem::Specification.new do |gem|
   gem.version       = Toquen::VERSION
   gem.authors       = ["Brian Muller"]
   gem.email         = ["bamuller@gmail.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = "Capistrano + AWS + Chef-Solo"
+  gem.summary       = "Capistrano + AWS + Chef-Solo"
   gem.homepage      = "https://github.com/bmuller/toquen"
 
   gem.files         = `git ls-files`.split($/)
