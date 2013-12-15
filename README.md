@@ -38,6 +38,7 @@ This will create a data_bag named *servers* in your data_bags path that contains
 Bootstrapping a server will perform all of the following:
 
 1. Update all packages (assuming a Debian/Ubuntu system)
+1. Sets the hostname to be whatever you set as value for the Name tag in AWS
 1. Set ruby 1.9.3 as the default ruby
 1. Install rubygems
 1. Install the chef and bundler gems
