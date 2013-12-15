@@ -69,9 +69,9 @@ Or on all servers:
     $ cap all cook
 
 ## Updating Roles
-If you change the roles of any servers you will need to run:
+If you change the roles of any servers on AWS (or add any new ones) you will need to run:
 
-    $ bundle exec cap update_roles
+    $ cap update_roles
 
 This will update the *servers* data_bag as well as the capistrano stages.
 
