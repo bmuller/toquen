@@ -8,62 +8,21 @@ task :update_roles do
 
   aws = Toquen::AWSProxy.new
   aws.server_details.each do |details|
-    run_locally { info "Updating local details for #{details[:name]} (#{details[:external_ip]})" }
-
-    open("#{fetch(:chef_data_bags_path)}/servers/#{details[:name]}.json", 'w') { |f|
-      f.write JSON.dump(details)
-    }
-    details[:roles].each { |role| roles[role] += [details[:external_ip]] }
-    roles['all'] += [details[:external_ip]]
-
-    open("config/deploy/server-#{details[:name]}.rb", 'w') { |f|
-      f.write("# This file will be overwritten by toquen!  Don't put anything here.\n")
-      f.write("set :stage, 'server-#{details[:name]}'.intern\n")
-      (details[:roles] + ["server-#{details[:name]}"]).each { |role|
-        f.write("role '#{role}'.intern, %w{#{details[:external_ip]}}\n")  
-      }
-      f.write("set :filter, :roles => %w{server-#{details[:name]}}\n")
-    }
+    details[:roles].each { |role| roles[role] += [details] }
+    roles['all'] += [details]
+    Toquen::LocalWriter.create_databag_item details
+    Toquen::LocalWriter.create_stage "server-#{details[:name]}", [details]
   end
 
-  roles.keys.each do |name|
-    open("config/deploy/#{name}.rb", 'w') { |f|
-      f.write("# This file will be overwritten by toquen!  Don't put anything here.\n")
-      f.write("set :stage, '#{name}'.intern\n")
-      roles.each { |n,ips|
-        f.write("role '#{n}'.intern, %w{#{ips.reject(&:nil?).join(' ')}}\n")
-      }
-      f.write("set :filter, :roles => %w{#{name}}\n")
-    }
-  end
+  roles.each { |name, servers| Toquen::Writer.create_stage name, servers }
 end
 
 desc "bootstrap a server so that it can run chef"
 task :bootstrap do
-  rgems = "rubygems-#{fetch(:rubygems_version, '2.1.11')}"
   on roles(:all), in: :parallel do |host|
     info "Bootstrapping #{host}..."
-    code = <<-EOF
-#!/bin/bash
-if [ -e "/home/#{fetch(:ssh_options)[:user]}/bootstrap.lock" ]; then exit 0; fi
-DEBIAN_FRONTEND=noninteractive apt-get -y update
-DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y install ruby1.9.3 ruby-dev automake make
-update-alternatives --set ruby /usr/bin/ruby1.9.1
-cd /usr/src
-rm -rf rubygems*
-wget -q http://production.cf.rubygems.org/rubygems/#{rgems}.tgz
-tar -zxf #{rgems}.tgz
-cd /usr/src/#{rgems}
-ruby setup.rb
-gem install --no-rdoc --no-ri chef bundler
-touch /home/#{fetch(:ssh_options)[:user]}/bootstrap.lock
-echo "Rebooting now, standby..."
-reboot
-EOF
     fname = "/home/#{fetch(:ssh_options)[:user]}/bootstrap.sh"
-    upload! StringIO.new(code), fname
+    upload! Toquen::Bootstrapper.generate_script(host), fname
     sudo "sh #{fname}"
   end
 end

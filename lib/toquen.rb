@@ -1,5 +1,7 @@
 require "toquen/version"
 require "toquen/aws"
+require "toquen/local_writer"
+require "toquen/bootstrapper"
 require "toquen/capistrano"
 
 module Toquen
