@@ -14,7 +14,7 @@ task :update_roles do
     Toquen::LocalWriter.create_stage "server-#{details[:name]}", [details]
   end
 
-  roles.each { |name, servers| Toquen::Writer.create_stage name, servers }
+  roles.each { |name, servers| Toquen::LocalWriter.create_stage name, servers }
 end
 
 desc "bootstrap a server so that it can run chef"
