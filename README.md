@@ -30,7 +30,7 @@ Then, run:
 
     $ cap update_roles
 
-This will create a data_bag named *servers* that contains one item per server name, as well as create stages per server and role for use in capistrano.
+This will create a data_bag named *servers* in your data_bags path that contains one item per server name, as well as create stages per server and role for use in capistrano.
 
 ## Server Bootstrapping
 Bootstrapping a server will perform all of the following:
@@ -43,11 +43,15 @@ Bootstrapping a server will perform all of the following:
 
 You can bootstrap a single server by using:
 
-    $ cap server-<server name> update_roles
+    $ cap server-<server name> bootstrap
 
-Or a all the servers with a given role with:
+Or a all the servers with a given role:
 
-    $ cap <role name> update_roles
+    $ cap <role name> bootstrap
+
+Or on all servers:
+
+    $ cap all bootstrap
 
 A lockfile is created after the first bootstrapping so that the full bootstrap process is only run once per server.
 
@@ -59,6 +63,10 @@ You can run chef-solo for a single server by using:
 Or a all the servers with a given role with:
 
     $ cap <role name> cook
+
+Or on all servers:
+
+    $ cap all cook
 
 ## Updating Roles
 If you change the roles of any servers you will need to run:
