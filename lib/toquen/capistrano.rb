@@ -64,7 +64,7 @@ desc "Run chef for servers"
 task :cook do
   on roles(:all), in: :parallel do |host|
     info "Chef is now cooking on #{host}..."
-    roles = host.properties.roles.reject { |r| r.to_s.start_with?('server-') }
+    roles = host.properties.roles.reject { |r| r.to_s.start_with?('server-') or r == :all }
     roles = roles.map { |r| "\"role[#{r}]\"" }.join(',')
     info "Roles for #{host}: #{roles}"
     tfile = "/home/#{fetch(:ssh_options)[:user]}/chef.json"
