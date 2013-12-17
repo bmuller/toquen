@@ -5,6 +5,7 @@ desc "update local cache of servers and roles"
 task :update_roles do
   load Pathname.new fetch(:deploy_config_path, 'config/deploy.rb')
   roles = Hash.new([])
+  servers = []
 
   aws = Toquen::AWSProxy.new
   aws.server_details.each do |details|
@@ -12,9 +13,13 @@ task :update_roles do
     roles['all'] += [details]
     Toquen::LocalWriter.create_databag_item details
     Toquen::LocalWriter.create_stage "server-#{details[:name]}", [details]
+    servers << details[:name]
   end
 
   roles.each { |name, servers| Toquen::LocalWriter.create_stage name, servers }
+
+  # Look for any superfluous servers / roles
+  Toquen::LocalWriter.superfluous_check!(servers, roles.keys)
 end
 
 desc "bootstrap a server so that it can run chef"

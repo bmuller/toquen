@@ -18,5 +18,23 @@ module Toquen
         f.write("set :filter, roles: %w{#{name}}\n")
       end
     end
+
+    def self.superfluous_check!(servers, roles)
+      # check for superflous stages / data bag items and warn if found
+      run_locally do
+        Dir["#{fetch(:chef_data_bags_path)}/servers/*.json"].each { |path|
+          unless servers.include? File.basename(path, ".json")
+            warn "Data bag item #{path} does not represent an active server. You should delete it."
+          end
+        }
+
+        stages = roles + servers.map { |n| "server-#{n}" }
+        Dir["config/deploy/*.rb"].each { |path|
+          unless stages.include? File.basename(path, ".rb")
+            warn "Stage #{path} does not represent an active server. You should delete it."
+          end
+        }
+      end
+    end
   end
 end
