@@ -1,5 +1,6 @@
 require 'capistrano/setup'
 require 'capistrano/console'
+require 'set'
 
 desc "update local cache of servers and roles"
 task :update_roles do
@@ -92,6 +93,19 @@ task :toquen_install do
   if not File.exists?('config/deploy.rb')
     puts "Initializing config/deploy.rb configuration file..."
     FileUtils.cp File.expand_path("../templates/deploy.rb", __FILE__), 'config/deploy.rb'
+  end
+end
+
+desc "Show all information about EC2 instances that match this project"
+task :details do
+  filter_roles = Set.new fetch(:filter)[:roles]
+  aws = Toquen::AWSProxy.new
+  aws.regions.each do |region|
+    instances = aws.server_details_in(region).reject do |instance|
+      instance_roles = instance[:roles] + ['all']
+      (filter_roles.intersection instance_roles.to_set).empty?
+    end
+    Toquen::DetailsTable.new(instances, region).output
   end
 end
   

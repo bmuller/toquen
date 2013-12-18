@@ -3,6 +3,7 @@ require "toquen/aws"
 require "toquen/local_writer"
 require "toquen/bootstrapper"
 require "toquen/capistrano"
+require "toquen/details_table"
 
 module Toquen
   class Config
