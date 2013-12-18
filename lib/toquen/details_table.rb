@@ -18,9 +18,9 @@ module Toquen
           :border_y => ""
         }
       )
-      table.title = @color.bold{ "Instances in #{@region}" }
+      table.title = @color.bold { "Instances in #{@region}" }
       header = [ "Name", "Roles", "Public", "Private", "Type" ]
-      table.add_row header.map { |h| @color.bold h }
+      table.add_row header.map { |h| @color.underline @color.bold h }
       @instances.each do |instance|
         table.add_row instance_to_row(instance)
       end
