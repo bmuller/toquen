@@ -29,11 +29,11 @@ module Toquen
 
     def instance_to_row(instance)
       [
-        @color.green{ instance[:name] },
-        @color.yellow{ instance[:roles].join(',') },
-        @color.cyan{ instance[:external_dns] } + " (#{instance[:external_ip]})",
-        @color.magenta{ instance[:internal_dns] } + " (#{instance[:internal_ip]})",
-        @color.red{ instance[:type] },
+        @color.green { instance[:name] },
+        @color.yellow { instance[:roles].join(',') },
+        @color.cyan { instance[:external_dns] || ""} + " (#{instance[:external_ip] || 'N/A'})",
+        @color.magenta { instance[:internal_dns] || ""} + " (#{instance[:internal_ip] || 'N/A'})",
+        @color.red { instance[:type] }
       ]
     end
   end

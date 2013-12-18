@@ -96,3 +96,17 @@ You can also manually specify the version of rubygems you want installed (defaul
 ```ruby
 set :rubygems_version, "2.1.11"
 ```
+
+## View Instances
+To see details about your aws instances you can use the **details** cap task.
+
+    $ cap all details
+
+Or for a given role with:
+
+    $ cap <role name> details
+
+Or for a given server with:
+
+    $ cap server-<server name> details
+

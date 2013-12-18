@@ -96,16 +96,16 @@ task :toquen_install do
   end
 end
 
-desc "Show all information about EC2 instances that match this project"
+desc "Show all information about EC2 instances"
 task :details do
   filter_roles = Set.new fetch(:filter)[:roles]
   aws = Toquen::AWSProxy.new
   aws.regions.each do |region|
     instances = aws.server_details_in(region).reject do |instance|
-      instance_roles = instance[:roles] + ['all']
+      instance_roles = instance[:roles] + ["all", "server-#{instance[:name]}"]
       (filter_roles.intersection instance_roles.to_set).empty?
     end
-    Toquen::DetailsTable.new(instances, region).output
+    Toquen::DetailsTable.new(instances, region).output unless instances.empty?
   end
 end
   
