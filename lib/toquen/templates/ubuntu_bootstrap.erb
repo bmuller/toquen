@@ -11,7 +11,7 @@ hostname "<%= host.properties.awsname %>"
 cd /usr/src
 rm -rf rubygems*
 wget -q http://production.cf.rubygems.org/rubygems/rubygems-<%= rubygems_version %>.tgz
-tar -zxf rubygems-<%= rubygems_version %>.tgz.tgz
+tar -zxf rubygems-<%= rubygems_version %>.tgz
 cd /usr/src/rubygems-<%= rubygems_version %>
 ruby setup.rb
 gem install --no-rdoc --no-ri chef bundler
