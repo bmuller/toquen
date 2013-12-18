@@ -1,7 +1,9 @@
 module Toquen
   module LocalWriter
     def self.create_databag_item(details)
-      open("#{fetch(:chef_data_bags_path)}/servers/#{details[:name]}.json", 'w') do |f|
+      servers = "#{fetch(:chef_data_bags_path)}/servers"
+      FileUtils.mkdir_p servers
+      open("#{servers}/#{details[:name]}.json", 'w') do |f|
         f.write JSON.dump(details)
       end
     end

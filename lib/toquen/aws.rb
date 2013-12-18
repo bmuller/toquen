@@ -2,6 +2,8 @@ require 'aws'
 
 module Toquen
   class AWSProxy
+    attr_reader :regions
+
     def initialize
       @key_id = fetch(:aws_access_key_id)
       @key = fetch(:aws_secret_access_key)
@@ -26,7 +28,10 @@ module Toquen
           :internal_ip => i.private_ip_address,
           :external_ip => i.public_ip_address,
           :name => i.tags["Name"],
-          :roles => Toquen.config.aws_roles_extractor.call(i)
+          :roles => Toquen.config.aws_roles_extractor.call(i),
+          :type => i.instance_type,
+          :external_dns => i.public_dns_name,
+          :internal_dns => i.private_dns_name
         }
       end
     end
