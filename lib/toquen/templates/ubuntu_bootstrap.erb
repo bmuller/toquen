@@ -3,8 +3,8 @@ if [ -e "/home/<%= user %>/bootstrap.lock" ]; then exit 0; fi
 DEBIAN_FRONTEND=noninteractive apt-get -y update
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y install ruby1.9.3 ruby-dev automake make
-update-alternatives --set ruby /usr/bin/ruby1.9.1
+DEBIAN_FRONTEND=noninteractive apt-get -y install gcc ruby<%= ruby_version %> ruby<%= ruby_version %>-dev automake make
+update-alternatives --set ruby /usr/bin/ruby<%= ruby_version %>
 echo "127.0.0.1     <%= host.properties.awsname %>" >> /etc/hosts
 echo "<%= host.properties.awsname %>" > /etc/hostname
 hostname "<%= host.properties.awsname %>"

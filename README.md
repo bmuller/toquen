@@ -91,10 +91,11 @@ By default, instance information is only pulled out of the default region (us-ea
 set :aws_regions, ['us-west-1', 'us-west-2']
 ```
 
-You can also manually specify the version of rubygems you want installed (default is 2.1.11):
+You can also manually specify the version of ruby (default 1.9.3) and rubygems (defualt 2.2.2) you want installed:
 
 ```ruby
 set :rubygems_version, "2.1.11"
+set :ruby_version, "2.0"
 ```
 
 ## View Instances
