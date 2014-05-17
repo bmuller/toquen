@@ -20,6 +20,26 @@ module Toquen
       }
     end
 
+    def authorize_ingress(secgroup, protocol, port, ip)
+      # test if exists first
+      return false if secgroup.ingress_ip_permissions.to_a.select { |p|
+        p.protocol == protocol and p.port_range.include?(port) and p.ip_ranges.include?(ip)
+      }.length > 0
+
+      secgroup.authorize_ingress(protocol, port, ip)
+      true
+    end
+
+    def revoke_ingress(secgroup, protocol, port, ip)
+      # test if exists first
+      return false unless secgroup.ingress_ip_permissions.to_a.select { |p|
+        p.protocol == protocol and p.port_range.include?(port) and p.ip_ranges.include?(ip)
+      }.length > 0
+
+      secgroup.revoke_ingress(protocol, port, ip)
+      true
+    end
+
     def server_details_in(region)
       AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
       AWS::EC2.new.instances.map do |i|
@@ -31,7 +51,8 @@ module Toquen
           :roles => Toquen.config.aws_roles_extractor.call(i),
           :type => i.instance_type,
           :external_dns => i.public_dns_name,
-          :internal_dns => i.private_dns_name
+          :internal_dns => i.private_dns_name,
+          :security_groups => i.security_groups
         }
       end
     end

@@ -1,4 +1,5 @@
 require "toquen/version"
+require "toquen/stunning"
 require "toquen/aws"
 require "toquen/local_writer"
 require "toquen/bootstrapper"

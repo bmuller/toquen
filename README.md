@@ -111,3 +111,11 @@ Or for a given server with:
 
     $ cap server-<server name> details
 
+## Open SSH to Current Machine
+To allow an SSH connection from your current machine (based on your internet visible IP, as determined using [this method](http://findingscience.com/internet/ruby/2014/05/17/stunning:-determining-your-public-ip.html)), use the open_ssh/close_ssh capistrano tasks.
+
+    $ cap databases open_ssh
+
+And then, when you're finished:
+
+    $ cap databases close_ssh

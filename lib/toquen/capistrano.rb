@@ -80,6 +80,70 @@ task :cook do
 end
 before :cook, :update_kitchen
 
+desc "Open SSH ingress to current machine"
+task :open_ssh do
+  secgroups = {}
+  filter_roles = Set.new fetch(:filter)[:roles]
+  aws = Toquen::AWSProxy.new
+  aws.regions.each do |region|
+    aws.server_details_in(region).each do |instance|
+      instance_roles = instance[:roles] + ["all", "server-#{instance[:name]}"]
+      unless (filter_roles.intersection instance_roles.to_set).empty?
+        instance[:security_groups].each { |sg| secgroups[sg.id] = sg }
+      end
+    end
+  end
+
+  run_locally do
+    ivip = StunClient.get_ip
+    if ivip.nil?
+      error "Could not fetch internet visible IP of this host."
+      return
+    end
+
+    ivip = "#{ivip}/32"
+    secgroups.values.each do |sg|
+      if aws.authorize_ingress sg, :tcp, 22, ivip
+        info "Opened port tcp:22 on security group '#{sg.name}' (#{sg.id}) to #{ivip}"
+      else
+        warn "Port tcp:22 in security group '#{sg.name}' (#{sg.id}) already open to #{ivip}"
+      end
+    end
+  end
+end
+
+desc "Close SSH ingress to current machine"
+task :close_ssh do
+  secgroups = {}
+  filter_roles = Set.new fetch(:filter)[:roles]
+  aws = Toquen::AWSProxy.new
+  aws.regions.each do |region|
+    aws.server_details_in(region).each do |instance|
+      instance_roles = instance[:roles] + ["all", "server-#{instance[:name]}"]
+      unless (filter_roles.intersection instance_roles.to_set).empty?
+        instance[:security_groups].each { |sg| secgroups[sg.id] = sg }
+      end
+    end
+  end
+
+  run_locally do
+    ivip = StunClient.get_ip
+    if ivip.nil?
+      error "Could not fetch internet visible IP of this host."
+      return
+    end
+
+    ivip = "#{ivip}/32"
+    secgroups.values.each do |sg|
+      if aws.revoke_ingress sg, :tcp, 22, ivip
+        info "Closed port tcp:22 on security group '#{sg.name}' (#{sg.id}) to #{ivip}"
+      else
+        warn "Port tcp:22 in security group '#{sg.name}' (#{sg.id}) already closed to #{ivip}"
+      end
+    end
+  end
+end
+
 desc "install toquen capistrano setup to current directory"
 task :toquen_install do
   unless Dir.exists?('config')
