@@ -119,3 +119,7 @@ To allow an SSH connection from your current machine (based on your internet vis
 And then, when you're finished:
 
     $ cap databases close_ssh
+
+Or, if you want to do everything in one step:
+
+    $ cap databases open_ssh cook close_ssh
