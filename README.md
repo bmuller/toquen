@@ -39,9 +39,8 @@ Bootstrapping a server will perform all of the following:
 
 1. Update all packages (assuming a Debian/Ubuntu system)
 1. Sets the hostname to be whatever you set as value for the Name tag in AWS
-1. Set ruby 1.9.3 as the default ruby
-1. Install rubygems
-1. Install the chef and bundler gems
+1. Installs Ruby / RubyGems
+1. Install the chef gem
 1. Reboot
 
 You can bootstrap a single server by using:
@@ -89,13 +88,6 @@ By default, instance information is only pulled out of the default region (us-ea
 
 ```ruby
 set :aws_regions, ['us-west-1', 'us-west-2']
-```
-
-You can also manually specify the version of ruby (default 1.9.3) and rubygems (defualt 2.2.2) you want installed:
-
-```ruby
-set :rubygems_version, "2.1.11"
-set :ruby_version, "2.0"
 ```
 
 ## View Instances

@@ -1,20 +1,17 @@
-#!/bin/bash
+#!/bin/bash -l
 if [ -e "/home/<%= user %>/bootstrap.lock" ]; then exit 0; fi
 DEBIAN_FRONTEND=noninteractive apt-get -y update
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y install gcc ruby<%= ruby_version %> ruby<%= ruby_version %>-dev automake make
-update-alternatives --set ruby /usr/bin/ruby<%= ruby_version %>
+DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev build-essential
+
+gem install --no-rdoc --no-ri chef
+
+echo Setting host variables...
 echo "127.0.0.1     <%= host.properties.awsname %>" >> /etc/hosts
 echo "<%= host.properties.awsname %>" > /etc/hostname
 hostname "<%= host.properties.awsname %>"
-cd /usr/src
-rm -rf rubygems*
-wget -q http://production.cf.rubygems.org/rubygems/rubygems-<%= rubygems_version %>.tgz
-tar -zxf rubygems-<%= rubygems_version %>.tgz
-cd /usr/src/rubygems-<%= rubygems_version %>
-ruby setup.rb
-gem install --no-rdoc --no-ri chef bundler
+
 touch /home/<%= user %>/bootstrap.lock
 echo "Rebooting now, standby..."
 reboot
