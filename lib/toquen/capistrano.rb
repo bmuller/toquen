@@ -56,6 +56,7 @@ task :update_kitchen do
     f.write("cookbook_path '#{kitchen}/cookbooks'\n")
     f.write("data_bag_path '#{kitchen}/data_bags'\n")
     f.write("role_path '#{kitchen}/roles'\n")
+    f.write("ssl_verify_mode :verify_peer\n")
   }
 
   on roles(:all), in: :parallel do |host|
