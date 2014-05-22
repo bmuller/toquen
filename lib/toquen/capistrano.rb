@@ -81,20 +81,9 @@ task :cook do
 end
 before :cook, :update_kitchen
 
-desc "Open SSH ingress to current machine"
-task :open_ssh do
-  secgroups = {}
-  filter_roles = Set.new fetch(:filter)[:roles]
-  aws = Toquen::AWSProxy.new
-  aws.regions.each do |region|
-    aws.server_details_in(region).each do |instance|
-      instance_roles = instance[:roles] + ["all", "server-#{instance[:name]}"]
-      unless (filter_roles.intersection instance_roles.to_set).empty?
-        instance[:security_groups].each { |sg| secgroups[sg.id] = sg }
-      end
-    end
-  end
-
+desc "Open a port of ingress to the current machine"
+task :open_port, :port do |t, args|
+  port = (args[:port] || 22).to_i
   run_locally do
     ivip = StunClient.get_ip
     if ivip.nil?
@@ -103,30 +92,20 @@ task :open_ssh do
     end
 
     ivip = "#{ivip}/32"
-    secgroups.values.each do |sg|
-      if aws.authorize_ingress sg, :tcp, 22, ivip
-        info "Opened port tcp:22 on security group '#{sg.name}' (#{sg.id}) to #{ivip}"
+    aws = Toquen::AWSProxy.new
+    aws.get_security_groups(fetch(:filter)[:secgroups]).each do |sg|
+      if aws.authorize_ingress sg, :tcp, port, ivip
+        info "Opened port tcp:#{port} on security group '#{sg.name}' (#{sg.id}) to #{ivip}"
       else
-        warn "Port tcp:22 in security group '#{sg.name}' (#{sg.id}) already open to #{ivip}"
+        warn "Port tcp:#{port} in security group '#{sg.name}' (#{sg.id}) already open to #{ivip}"
       end
     end
   end
 end
 
-desc "Close SSH ingress to current machine"
-task :close_ssh do
-  secgroups = {}
-  filter_roles = Set.new fetch(:filter)[:roles]
-  aws = Toquen::AWSProxy.new
-  aws.regions.each do |region|
-    aws.server_details_in(region).each do |instance|
-      instance_roles = instance[:roles] + ["all", "server-#{instance[:name]}"]
-      unless (filter_roles.intersection instance_roles.to_set).empty?
-        instance[:security_groups].each { |sg| secgroups[sg.id] = sg }
-      end
-    end
-  end
-
+desc "Close a port of ingress to the current machine"
+task :close_port, :port do |t, args|
+  port = (args[:port] || 22).to_i
   run_locally do
     ivip = StunClient.get_ip
     if ivip.nil?
@@ -135,14 +114,25 @@ task :close_ssh do
     end
 
     ivip = "#{ivip}/32"
-    secgroups.values.each do |sg|
-      if aws.revoke_ingress sg, :tcp, 22, ivip
-        info "Closed port tcp:22 on security group '#{sg.name}' (#{sg.id}) to #{ivip}"
+    aws = Toquen::AWSProxy.new
+    aws.get_security_groups(fetch(:filter)[:secgroups]).each do |sg|
+      if aws.revoke_ingress sg, :tcp, port, ivip
+        info "Closed port tcp:#{port} on security group '#{sg.name}' (#{sg.id}) to #{ivip}"
       else
-        warn "Port tcp:22 in security group '#{sg.name}' (#{sg.id}) already closed to #{ivip}"
+        warn "Port tcp:#{port} in security group '#{sg.name}' (#{sg.id}) already closed to #{ivip}"
       end
     end
   end
+end
+
+desc "Open SSH ingress to current machine"
+task :open_ssh do
+  invoke "open_port", "22"
+end
+
+desc "Close SSH ingress to current machine"
+task :close_ssh do
+  invoke "close_port", "22"
 end
 
 desc "install toquen capistrano setup to current directory"

@@ -8,6 +8,7 @@ module Toquen
       @key_id = fetch(:aws_access_key_id)
       @key = fetch(:aws_secret_access_key)
       @regions = fetch(:aws_regions, ['us-east-1'])
+      AWS.config(:access_key_id => @key_id, :secret_access_key => @key)
     end
 
     def server_details
@@ -18,6 +19,11 @@ module Toquen
       details.select { |detail|
         not detail[:name].nil? and detail[:roles].length > 0
       }
+    end
+
+    def get_security_groups(ids)
+      ectwo = AWS::EC2.new
+      ids.map { |id| ectwo.security_groups[id] }
     end
 
     def authorize_ingress(secgroup, protocol, port, ip)
@@ -52,7 +58,7 @@ module Toquen
           :type => i.instance_type,
           :external_dns => i.public_dns_name,
           :internal_dns => i.private_dns_name,
-          :security_groups => i.security_groups
+          :security_groups => i.security_groups.to_a.map(&:id)
         }
       end
     end

@@ -13,11 +13,14 @@ module Toquen
       open("config/deploy/#{name}.rb", 'w') do |f|
         f.write("# This file will be overwritten by toquen!  Don't put anything here.\n")
         f.write("set :stage, '#{name}'.intern\n")
+        secgroups = []
         servers.each { |details|
           rstring = (details[:roles] + [ "all", "server-#{details[:name]}" ]).join(' ')
           f.write("server '#{details[:external_ip]}', roles: %w{#{rstring}}, awsname: '#{details[:name]}'\n")
+          secgroups += details[:security_groups]
         }
-        f.write("set :filter, roles: %w{#{name}}\n")
+        secstring = secgroups.uniq.join(' ')
+        f.write("set :filter, roles: %w{#{name}}, secgroups: %w{#{secstring}}\n")
       end
     end
 

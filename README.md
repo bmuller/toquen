@@ -115,3 +115,5 @@ And then, when you're finished:
 Or, if you want to do everything in one step:
 
     $ cap databases open_ssh cook close_ssh
+
+**Note**: You can also use the task *open_port[22]* and *close_port[22]* to open and close SSH (or any other port).
