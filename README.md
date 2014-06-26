@@ -24,7 +24,7 @@ And then on the command line execute:
     $ bundle
     $ cap toquen_install
 
-This will create a config directory with a file named *deploy.rb*.  Edit this file, setting the location of your AWS key, AWS credentials, and chef cookbooks/data bags/roles.  If you're servers are in a region other than us-east-1, then you'll need to set the region as [described below](#additional-configuration).
+This will create a config directory with a file named *deploy.rb*.  Edit this file, setting the location of your AWS key, AWS credentials, and chef cookbooks/data bags/roles.  If your servers are in a region (or regions) other than us-east-1, then you'll need to set the region as [described below](#additional-configuration).
 
 Then, in AWS, create an [AWS instance tag](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html) named "Roles" for each instance, using a space separated list of chef roles as the value.  The "Name" tag must also be set or the instance will be ignored.
 
