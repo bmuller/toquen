@@ -90,6 +90,12 @@ By default, instance information is only pulled out of the default region (us-ea
 set :aws_regions, ['us-west-1', 'us-west-2']
 ```
 
+You can also specify the location to upload the kitchen before running chef.  By default, this is set to the ssh user's home directory.
+
+```ruby
+set :chef_upload_location, "/tmp/toquen"
+```
+
 ## View Instances
 To see details about your aws instances you can use the **details** cap task.
 

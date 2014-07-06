@@ -2,6 +2,8 @@ require 'capistrano/setup'
 require 'capistrano/console'
 require 'set'
 
+set :chef_upload_location, -> { "/home/#{fetch(:ssh_options)[:user]}" }
+
 desc "update local cache of servers and roles"
 task :update_roles do
   load Pathname.new fetch(:deploy_config_path, 'config/deploy.rb')
@@ -35,7 +37,7 @@ end
 
 desc "Update cookbooks/data bags/roles on server"
 task :update_kitchen do
-  kitchen = "/home/#{fetch(:ssh_options)[:user]}/kitchen"
+  kitchen = "#{fetch(:chef_upload_location)}/kitchen"
   lkitchen = "/tmp/toquen/kitchen"
   user = fetch(:ssh_options)[:user]
   key = fetch(:ssh_options)[:keys].first
@@ -62,7 +64,7 @@ task :update_kitchen do
   on roles(:all), in: :parallel do |host|
     run_locally do
       info "Sending kitchen to #{host}..."
-      execute "rsync -avzk --delete -e 'ssh -i #{key}' #{lkitchen} #{user}@#{host}:/home/#{fetch(:ssh_options)[:user]}"
+      execute "rsync -avzk --delete -e 'ssh -i #{key}' #{lkitchen} #{user}@#{host}:#{fetch(:chef_upload_location)}"
     end
   end
 end
@@ -74,9 +76,11 @@ task :cook do
     roles = host.properties.roles.reject { |r| r.to_s.start_with?('server-') or r == :all }
     roles = roles.map { |r| "\"role[#{r}]\"" }.join(',')
     info "Roles for #{host}: #{roles}"
-    tfile = "/home/#{fetch(:ssh_options)[:user]}/chef.json"
+    tfile = "chef.json"
     upload! StringIO.new("{ \"run_list\": [ #{roles} ] }"), tfile
-    execute "sudo chef-solo -c kitchen/chef_config.rb -j #{tfile}"
+    within fetch(:chef_upload_location) do
+      execute "sudo chef-solo -c #{fetch(:chef_upload_location)}/kitchen/chef_config.rb -j #{tfile}"
+    end
   end
 end
 before :cook, :update_kitchen
