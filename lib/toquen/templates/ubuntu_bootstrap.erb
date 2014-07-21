@@ -3,7 +3,7 @@ if [ -e "/home/<%= user %>/bootstrap.lock" ]; then exit 0; fi
 DEBIAN_FRONTEND=noninteractive apt-get -y update
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev build-essential
+DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev build-essential rubygems
 
 gem install --no-rdoc --no-ri chef
 
