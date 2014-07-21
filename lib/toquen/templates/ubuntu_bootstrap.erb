@@ -1,9 +1,15 @@
 #!/bin/bash -l
 if [ -e "/home/<%= user %>/bootstrap.lock" ]; then exit 0; fi
+(lsb_release -d | grep Ubuntu) || (echo "This script only works with Ubuntu." && exit 0)
+VERSION=$(lsb_release -d | awk '{ split($3,a,"."); print a[1] }')
+if [ $VERSION -lt 14 ]; then
+    echo "This bootstrap script is designed to work with Ubuntu 14 and greater"
+    exit 0
+fi
 DEBIAN_FRONTEND=noninteractive apt-get -y update
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev build-essential rubygems
+DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev build-essential
 
 gem install --no-rdoc --no-ri chef
 
