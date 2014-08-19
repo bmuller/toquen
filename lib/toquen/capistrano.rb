@@ -40,7 +40,7 @@ task :update_kitchen do
   kitchen = "#{fetch(:chef_upload_location)}/kitchen"
   lkitchen = "/tmp/toquen/kitchen"
   user = fetch(:ssh_options)[:user]
-  key = fetch(:ssh_options)[:keys].first
+  keys = fetch(:ssh_options)[:keys]
 
   run_locally do
     info "Building kitchen locally..."
@@ -64,7 +64,8 @@ task :update_kitchen do
   on roles(:all), in: :parallel do |host|
     run_locally do
       info "Sending kitchen to #{host}..."
-      execute "rsync -avzk --delete -e 'ssh -i #{key}' #{lkitchen} #{user}@#{host}:#{fetch(:chef_upload_location)}"
+      keyoptions = keys.map { |key| "-i #{key}" }.join(' ')
+      execute "rsync -avzk --delete -e 'ssh #{keyoptions}' #{lkitchen} #{user}@#{host}:#{fetch(:chef_upload_location)}"
     end
   end
 end
