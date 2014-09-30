@@ -21,6 +21,38 @@ module Toquen
       }
     end
 
+    def add_role(ivips, role)
+      @regions.each do |region|
+        AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
+        ec2 = AWS::EC2.new
+        ec2.instances.map do |i|
+          if ivips.include? i.public_ip_address
+            roles = Toquen.config.aws_roles_extractor.call(i)
+            unless roles.include? role
+              roles << role
+              ec2.tags.create(i, 'Roles', :value => roles.uniq.sort.join(' '))
+            end
+          end
+        end
+      end
+    end
+
+    def remove_role(ivips, role)
+      @regions.each do |region|
+        AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
+        ec2 = AWS::EC2.new
+        ec2.instances.map do |i|
+          if ivips.include? i.public_ip_address
+            roles = Toquen.config.aws_roles_extractor.call(i)
+            if roles.include? role
+              roles = roles.reject { |r| r == role }
+              Toquen.config.aws_roles_setter.call(ec2, i, roles.uniq)
+            end
+          end
+        end
+      end
+    end
+
     def get_security_groups(ids)
       ectwo = AWS::EC2.new
       ids.map { |id| ectwo.security_groups[id] }

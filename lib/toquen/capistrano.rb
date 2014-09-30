@@ -86,6 +86,30 @@ task :cook do
 end
 before :cook, :update_kitchen
 
+desc "Add given role to machines"
+task :add_role, :role do |t, args|
+  run_locally do
+    if args[:role].nil? or args[:role].empty?
+      error "You must give the role to add"
+    else
+      aws = Toquen::AWSProxy.new
+      aws.add_role roles(:all), args[:role]
+    end
+  end
+end
+
+desc "Remove given role from machines"
+task :remove_role, :role do |t, args|
+  run_locally do
+    if args[:role].nil? or args[:role].empty?
+      error "You must give the role to remove"
+    else
+      aws = Toquen::AWSProxy.new
+      aws.remove_role roles(:all), args[:role]
+    end
+  end
+end
+
 desc "Open a port of ingress to the current machine"
 task :open_port, :port do |t, args|
   port = (args[:port] || 22).to_i

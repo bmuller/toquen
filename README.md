@@ -21,8 +21,10 @@ require 'toquen'
 
 And then on the command line execute:
 
-    $ bundle
-    $ cap toquen_install
+```shell
+bundle
+cap toquen_install
+```
 
 This will create a config directory with a file named *deploy.rb*.  Edit this file, setting the location of your AWS key, AWS credentials, and chef cookbooks/data bags/roles.  If your servers are in a region (or regions) other than us-east-1, then you'll need to set the region as [described below](#additional-configuration).
 
@@ -30,7 +32,9 @@ Then, in AWS, create an [AWS instance tag](http://docs.aws.amazon.com/AWSEC2/lat
 
 Then, run:
 
-    $ cap update_roles
+```shell
+cap update_roles
+```
 
 This will create a data_bag named *servers* in your data_bags path that contains one item per server name, as well as create stages per server and role for use in capistrano.
 
@@ -45,43 +49,59 @@ Bootstrapping a server will perform all of the following:
 
 You can bootstrap a single server by using:
 
-    $ cap server-<server name> bootstrap
+```shell
+cap server-<server name> bootstrap
+```
 
 Or a all the servers with a given role:
 
-    $ cap <role name> bootstrap
+```shell
+cap <role name> bootstrap
+```
 
 Or on all servers:
 
-    $ cap all bootstrap
+```shell
+cap all bootstrap
+```
 
 A lockfile is created after the first bootstrapping so that the full bootstrap process is only run once per server.
 
 ## Running Chef-Solo
 You can run chef-solo for a single server by using:
 
-    $ cap server-<server name> cook
+```shell
+cap server-<server name> cook
+```
 
 Or a all the servers with a given role with:
 
-    $ cap <role name> cook
+```shell
+cap <role name> cook
+```
 
 Or on all servers:
 
-    $ cap all cook
+```shell
+cap all cook
+```
 
 ## Updating Roles
 If you change the roles of any servers on AWS (or add any new ones) you will need to run:
 
-    $ cap update_roles
+```shell
+cap update_roles
+```
 
 This will update the *servers* data_bag as well as the capistrano stages.
 
 ## Additional Configuration
-If you want to use a different tag name (or you like commas as a delimiter) you can specify your own role extractor by placing the following in either your Capfile or config/deploy.rb:
+If you want to use a different tag name (or you like commas as a delimiter) you can specify your own role extractor/setter by placing the following in either your Capfile or config/deploy.rb:
 
 ```ruby
+# these are the default - replace with your own
 Toquen.config.aws_roles_extractor = lambda { |inst| (inst.tags["MyRoles"] || "").split(",") }
+Toquen.config.aws_roles_setter = lambda { |ec2, inst, roles| ec2.tags.create(inst, 'Roles', :value => roles.sort.join(' ')) }
 ```
 
 By default, instance information is only pulled out of the default region (us-east-1), but you can specify mutiple alternative regions:
@@ -99,27 +119,46 @@ set :chef_upload_location, "/tmp/toquen"
 ## View Instances
 To see details about your aws instances you can use the **details** cap task.
 
-    $ cap all details
+```shell
+cap all details
+```
 
 Or for a given role with:
 
-    $ cap <role name> details
+```shell
+cap <role name> details
+```
 
 Or for a given server with:
 
-    $ cap server-<server name> details
+```shell
+cap server-<server name> details
+```
 
 ## Open SSH to Current Machine
 To allow an SSH connection from your current machine (based on your internet visible IP, as determined using [this method](http://findingscience.com/internet/ruby/2014/05/17/stunning:-determining-your-public-ip.html)), use the open_ssh/close_ssh capistrano tasks.
 
-    $ cap databases open_ssh
+```shell
+cap databases open_ssh
+```
 
 And then, when you're finished:
 
-    $ cap databases close_ssh
+```shell
+cap databases close_ssh
+```
 
 Or, if you want to do everything in one step:
 
-    $ cap databases open_ssh cook close_ssh
+```shell
+cap databases open_ssh cook close_ssh
+```
 
 **Note**: You can also use the task *open_port[22]* and *close_port[22]* to open and close SSH (or any other port).
+
+## Additional Cap Tasks
+There are a few other helper cap tasks as well - to see them, run:
+
+```shell
+cap -T
+```
