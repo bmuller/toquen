@@ -156,6 +156,20 @@ cap databases open_ssh cook close_ssh
 
 **Note**: You can also use the task *open_port[22]* and *close_port[22]* to open and close SSH (or any other port).
 
+## Application Configuration
+Toquen can also drop off a config file meant for use by applications on your system.  Here's how that works:
+
+1. Toquen creates a hash that contains a list of all of your servers and all of their details (based on your servers data_bag)
+1. Toquen looks for a file named "apps.json" in your config folder, and if it's found, Toquen pulls out all of the keys that correspond with the server's roles and merges them together with the hash it's building (if this file contains secrets, consider *not* including in revision control)
+1. The resulting hash is dropped off in your user's home directory (this can be overridden with the apps_config_path config variable) with the filename "apps.json".
+
+This happens on every cook, and can be run separately as:
+
+```shell
+cap <role name> update_appconfig
+```
+
+
 ## Additional Cap Tasks
 There are a few other helper cap tasks as well - to see them, run:
 
