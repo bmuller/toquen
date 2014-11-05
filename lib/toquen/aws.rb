@@ -1,6 +1,12 @@
 require 'aws'
 
 module Toquen
+  def self.servers_with_role(role)
+    Toquen::AWSProxy.new.server_details.select do |details|
+      details[:roles].include? role
+    end
+  end
+
   class AWSProxy
     attr_reader :regions
 

@@ -169,6 +169,29 @@ This happens on every cook, and can be run separately as:
 cap <role name> update_appconfig
 ```
 
+## External Capistrano Integration
+If you have applications that are deployed via capistrano, you can use Toquen to dynamically configure where these applications are deployed based on their roles.  This way, you don't have to keep editing your *config/deploy/production.rb* file every time a server is added or removed.
+
+For example, let's say we have an application that should be deployed to all servers with a role of "web".  A *config/deploy/production.rb* file could look like this:
+
+```ruby
+require 'toquen'
+
+set :aws_access_key_id, "AKEYAKEY"
+set :aws_secret_access_key, "AKEYID"
+set :aws_regions, ['us-east-1']
+
+Toquen.servers_with_role('web').each do | details|
+  server details[:external_ip], roles: %w{web app db}
+end
+
+set :applicationdir, "/home/deploy/webapp"
+set :rails_env, "production"
+set :branch, 'master'
+...
+```
+
+Just make sure to add the toquen gem to your Gemfile, and then you can use capistrano per usual to deploy.
 
 ## Additional Cap Tasks
 There are a few other helper cap tasks as well - to see them, run:
