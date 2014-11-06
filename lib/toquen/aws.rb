@@ -60,8 +60,10 @@ module Toquen
     end
 
     def get_security_groups(ids)
-      ectwo = AWS::EC2.new
-      ids.map { |id| ectwo.security_groups[id] }
+      AWS.memoize do
+        ectwo = AWS::EC2.new
+        ids.map { |id| ectwo.security_groups[id] }
+      end
     end
 
     def authorize_ingress(secgroup, protocol, port, ip)
@@ -86,18 +88,20 @@ module Toquen
 
     def server_details_in(region)
       AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
-      AWS::EC2.new.instances.map do |i|
-        {
-          :id => i.tags["Name"],
-          :internal_ip => i.private_ip_address,
-          :external_ip => i.public_ip_address,
-          :name => i.tags["Name"],
-          :roles => Toquen.config.aws_roles_extractor.call(i),
-          :type => i.instance_type,
-          :external_dns => i.public_dns_name,
-          :internal_dns => i.private_dns_name,
-          :security_groups => i.security_groups.to_a.map(&:id)
-        }
+      AWS.memoize do
+        AWS::EC2.new.instances.map do |i|
+          {
+            :id => i.tags["Name"],
+            :internal_ip => i.private_ip_address,
+            :external_ip => i.public_ip_address,
+            :name => i.tags["Name"],
+            :roles => Toquen.config.aws_roles_extractor.call(i),
+            :type => i.instance_type,
+            :external_dns => i.public_dns_name,
+            :internal_dns => i.private_dns_name,
+            :security_groups => i.security_groups.to_a.map(&:id)
+          }
+        end
       end
     end
 
