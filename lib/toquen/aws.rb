@@ -89,7 +89,7 @@ module Toquen
     def server_details_in(region)
       AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
       AWS.memoize do
-        AWS::EC2.new.instances.map do |i|
+        AWS::EC2.new.instances.filter("instance-state-name", "running").map do |i|
           {
             :id => i.tags["Name"],
             :internal_ip => i.private_ip_address,
