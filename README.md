@@ -135,7 +135,14 @@ Or for a given server with:
 cap server-<server name> details
 ```
 
-## Open SSH to Current Machine
+## SSH Into Server
+To SSH into a server, use the *ssh* cap task.  It will handle execing SSH with the correct paths to keys.
+
+```shell
+cap <role> ssh
+```
+
+## Open SSH in Security Group to Current Machine
 To allow an SSH connection from your current machine (based on your internet visible IP, as determined using [this method](http://findingscience.com/internet/ruby/2014/05/17/stunning:-determining-your-public-ip.html)), use the open_ssh/close_ssh capistrano tasks.
 
 ```shell

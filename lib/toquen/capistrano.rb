@@ -26,6 +26,28 @@ task :update_roles do
   Toquen::LocalWriter.superfluous_check!(servers, roles.keys)
 end
 
+desc "SSH into a specific server"
+task :ssh do
+  hosts = []
+  on roles(:all) do |host|
+    run_locally { hosts << host.hostname }
+  end
+
+  run_locally do
+    if hosts.length == 0
+      warn "No server matched that role"
+    elsif hosts.length > 1
+      warn "More than one server matched that role"
+    else
+      keys = fetch(:ssh_options)[:keys]
+      keyoptions = keys.map { |key| "-i #{key}" }.join(' ')
+      cmd = "ssh #{keyoptions} #{fetch(:ssh_options)[:user]}@#{hosts.first}"
+      info "Running #{cmd}"
+      exec cmd
+    end
+  end
+end
+
 desc "send up apps.json config file"
 task :update_appconfig do
   return unless File.exists?('config/apps.json')
