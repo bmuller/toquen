@@ -130,7 +130,6 @@ task :cook do
   end
 end
 before :cook, :update_kitchen
-after :cook, :update_appconfig
 
 desc "Add given role to machines"
 task :add_role, :role do |t, args|

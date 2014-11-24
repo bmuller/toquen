@@ -170,7 +170,13 @@ Toquen can also drop off a config file meant for use by applications on your sys
 1. Toquen looks for a file named "apps.json" in your config folder, and if it's found, Toquen pulls out all of the keys that correspond with the server's roles and merges them together with the hash it's building (if this file contains secrets, consider *not* including in revision control)
 1. The resulting hash is dropped off in your user's home directory (this can be overridden with the apps_config_path config variable) with the filename "apps.json".
 
-This happens on every cook, and can be run separately as:
+Most likely, you'll want to add this line to your deploy.rb:
+
+```ruby
+after :cook, :update_appconfig
+```
+
+so that it will be run on every cook.  You can always run it separately as:
 
 ```shell
 cap <role name> update_appconfig
