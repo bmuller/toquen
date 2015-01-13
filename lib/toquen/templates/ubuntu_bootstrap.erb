@@ -6,10 +6,11 @@ if [ $VERSION -lt 14 ]; then
     echo "This bootstrap script is designed to work with Ubuntu 14 and greater"
     exit 0
 fi
+DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:brightbox/ruby-ng
 DEBIAN_FRONTEND=noninteractive apt-get -y update
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev build-essential
+DEBIAN_FRONTEND=noninteractive apt-get -y install ruby2.1 ruby2.1-dev build-essential
 
 gem install --no-rdoc --no-ri chef -v 11.16.4
 
