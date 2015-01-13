@@ -11,7 +11,7 @@ DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
 DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev build-essential
 
-gem install --no-rdoc --no-ri chef
+gem install --no-rdoc --no-ri chef -v 11.16.4
 
 echo Setting host variables...
 echo "127.0.0.1     <%= host.properties.awsname %>" >> /etc/hosts
