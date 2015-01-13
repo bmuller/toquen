@@ -50,23 +50,28 @@ end
 
 desc "send up apps.json config file"
 task :update_appconfig do
-  return unless File.exists?('config/apps.json')
-  apps = JSON.parse(File.read('config/apps.json'))
-  config = { "_description" => "Dropped off by Toquen/Chef.", "servers" => [] }.merge(apps['default'] || {})
-  Dir.glob("#{fetch(:chef_data_bags_path)}/servers/*.json") do |fname|
-    open(fname, 'r') { |f| config['servers'] << JSON.parse(f.read) }
-  end
-  dest = File.join fetch(:apps_config_path, "/home/#{fetch(:ssh_options)[:user]}"), "apps.json"
-
-  on roles(:all), in: :parallel do |host|
-    appconfig = Marshal.load(Marshal.dump(config))
-    host.properties.roles.each do |role|
-      appconfig.merge!(apps[role.to_s] || {})
+  if File.exists?('config/apps.json')
+    apps = JSON.parse(File.read('config/apps.json'))
+    config = { "_description" => "Dropped off by Toquen/Chef.", "servers" => [] }.merge(apps['default'] || {})
+    Dir.glob("#{fetch(:chef_data_bags_path)}/servers/*.json") do |fname|
+      open(fname, 'r') { |f| config['servers'] << JSON.parse(f.read) }
     end
-    debug "Uploading app config file to #{dest}"
-    upload! StringIO.new(JSON.pretty_generate(appconfig)), "/tmp/apps.json"
-    sudo "mv /tmp/apps.json #{dest}"
-    sudo "chmod 755 #{dest}"
+    dest = File.join fetch(:apps_config_path, "/home/#{fetch(:ssh_options)[:user]}"), "apps.json"
+
+    on roles(:all), in: :parallel do |host|
+      appconfig = Marshal.load(Marshal.dump(config))
+      host.properties.roles.each do |role|
+        appconfig.merge!(apps[role.to_s] || {})
+      end
+      debug "Uploading app config file to #{dest}"
+      upload! StringIO.new(JSON.pretty_generate(appconfig)), "/tmp/apps.json"
+      sudo "mv /tmp/apps.json #{dest}"
+      sudo "chmod 755 #{dest}"
+    end
+  else
+    run_locally {
+      error "No config/apps.json file found."
+    }
   end
 end
 
