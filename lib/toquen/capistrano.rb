@@ -114,7 +114,7 @@ task :update_kitchen do
   on roles(:all), in: :parallel do |host|
     run_locally do
       info "Sending kitchen to #{host}..."
-      keyoptions = keys.map { |key| "-i #{key}" }.join(' ')
+      keyoptions = keys.map { |key| "-i #{File.expand_path key}" }.join(' ')
       execute "rsync -avzk --delete -e 'ssh #{keyoptions}' #{lkitchen} #{user}@#{host}:#{fetch(:chef_upload_location)}"
     end
   end

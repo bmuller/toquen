@@ -6,12 +6,19 @@ if [ $VERSION -lt 14 ]; then
     echo "This bootstrap script is designed to work with Ubuntu 14 and greater"
     exit 0
 fi
-DEBIAN_FRONTEND=noninteractive apt-get -y update
-DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
-DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev build-essential
 
-gem install --no-rdoc --no-ri chef -v 11.16.4
+# prepare to add brightbox repo
+DEBIAN_FRONTEND=noninteractive
+apt-get -y update && apt-get -y install software-properties-common
+apt-add-repository -y ppa:brightbox/ruby-ng
+
+# update apt, install ruby 2.3, upgrade everything
+apt-get -y update
+apt-get -y install build-essential ruby2.3 ruby2.3-dev
+apt-get -y upgrade && apt-get -y dist-upgrade
+
+# install chef
+gem install --no-rdoc --no-ri chef
 
 echo Setting host variables...
 echo "127.0.0.1     <%= host.properties.awsname %>" >> /etc/hosts
