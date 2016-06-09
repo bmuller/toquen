@@ -17,9 +17,9 @@ Gem::Specification.new do |gem|
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
-  gem.add_dependency('capistrano', '>= 3.0.1')
+  gem.add_dependency('capistrano', '~> 3.0', '>= 3.0.1')
   gem.add_dependency('aws-sdk', '~> 1')
-  gem.add_dependency('terminal-table')
-  gem.add_dependency('term-ansicolor')
-  gem.add_development_dependency("rdoc")
+  gem.add_dependency('terminal-table', '~> 1.6', '>= 1.6.0')
+  gem.add_dependency('term-ansicolor', '~> 1.3', '>= 1.3.2')
+  gem.add_development_dependency('rdoc', '~> 4.2', '>= 4.2.2')
 end
