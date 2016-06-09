@@ -60,10 +60,15 @@ module Toquen
     end
 
     def get_security_groups(ids)
-      AWS.memoize do
-        ectwo = AWS::EC2.new
-        ids.map { |id| ectwo.security_groups[id] }
+      result = []
+      @regions.map do |region|
+        AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
+        AWS.memoize do
+          ectwo = AWS::EC2.new
+          ectwo.security_groups.each { |sg| result << sg if ids.include? sg.id }
+        end
       end
+      result
     end
 
     def authorize_ingress(secgroup, protocol, port, ip)
