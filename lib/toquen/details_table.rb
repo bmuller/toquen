@@ -19,7 +19,7 @@ module Toquen
         }
       )
       table.title = @color.bold { "Instances in #{@region}" }
-      header = [ "Name", "Roles", "Public", "Private", "Type" ]
+      header = [ "Name", "Roles", "Env", "Public", "Private", "Type" ]
       table.add_row header.map { |h| @color.underline @color.bold h }
       @instances.each do |instance|
         table.add_row instance_to_row(instance)
@@ -31,6 +31,7 @@ module Toquen
       [
         @color.green { instance[:name] },
         @color.yellow { instance[:roles].join(",") },
+        @color.magenta { instance[:environment] || "" },
         instance[:external_dns].nil? ? "(N/A)" : @color.cyan(instance[:external_dns]) + " (#{instance[:external_ip]})",
         instance[:internal_dns].nil? ? "(N/A)" : @color.cyan(instance[:internal_dns]) + " (#{instance[:internal_ip]})",
         @color.red { instance[:type] }

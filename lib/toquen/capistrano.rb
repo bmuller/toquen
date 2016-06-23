@@ -63,6 +63,9 @@ task :update_appconfig do
       host.properties.roles.each do |role|
         appconfig.merge!(apps[role.to_s] || {})
       end
+      if host.properties.environment
+        appconfig.merge!(apps[host.properties.environment.to_s] || {})
+      end
       debug "Uploading app config file to #{dest}"
       upload! StringIO.new(JSON.pretty_generate(appconfig)), "/tmp/apps.json"
       sudo "mv /tmp/apps.json #{dest}"
@@ -95,12 +98,13 @@ task :update_kitchen do
   run_locally do
     info "Building kitchen locally..."
     execute [
-             "rm -rf #{lkitchen}", 
-             "mkdir -p #{lkitchen}",
-             "ln -s #{File.expand_path(fetch(:chef_cookbooks_path))} #{lkitchen}",
-             "ln -s #{File.expand_path(fetch(:chef_data_bags_path))} #{lkitchen}",
-             "ln -s #{File.expand_path(fetch(:chef_roles_path))} #{lkitchen}"
-            ].join(" && ")
+      "rm -rf #{lkitchen}",
+      "mkdir -p #{lkitchen}",
+      "ln -s #{File.expand_path(fetch(:chef_cookbooks_path))} #{lkitchen}",
+      "ln -s #{File.expand_path(fetch(:chef_data_bags_path))} #{lkitchen}",
+      "ln -s #{File.expand_path(fetch(:chef_roles_path))} #{lkitchen}",
+      "ln -s #{File.expand_path(fetch(:chef_environments_path))} #{lkitchen}"
+    ].join(" && ")
   end
 
   open("#{lkitchen}/chef_config.rb", 'w') { |f|
@@ -124,13 +128,17 @@ desc "Run chef for servers"
 task :cook do
   on roles(:all), in: :parallel do |host|
     info "Chef is now cooking on #{host}..."
+    env = host.properties.environment
     roles = host.properties.roles.reject { |r| r.to_s.start_with?('server-') or r == :all }
     roles = roles.map { |r| "\"role[#{r}]\"" }.join(',')
     info "Roles for #{host}: #{roles}"
     tfile = "chef.json"
     upload! StringIO.new("{ \"run_list\": [ #{roles} ] }"), tfile
     within fetch(:chef_upload_location) do
-      execute "sudo chef-solo -c #{fetch(:chef_upload_location)}/kitchen/chef_config.rb -j #{tfile}"
+      args = ["-c #{fetch(:chef_upload_location)}/kitchen/chef_config.rb"]
+      args += ["-j #{tfile}"]
+      args += ["--environment #{env}"] unless env.nil?
+      execute "sudo chef-solo #{args.join(' ')}"
     end
   end
 end

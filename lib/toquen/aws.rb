@@ -104,7 +104,8 @@ module Toquen
             :type => i.instance_type,
             :external_dns => i.public_dns_name,
             :internal_dns => i.private_dns_name,
-            :security_groups => i.security_groups.to_a.map(&:id)
+            :security_groups => i.security_groups.to_a.map(&:id),
+            :environment => i.tags["Environment"] || nil
           }
         end
       end

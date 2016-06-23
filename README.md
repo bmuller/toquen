@@ -26,9 +26,9 @@ bundle
 cap toquen_install
 ```
 
-This will create a config directory with a file named *deploy.rb*.  Edit this file, setting the location of your AWS key, AWS credentials, and chef cookbooks/data bags/roles.  If your servers are in a region (or regions) other than us-east-1, then you'll need to set the region as [described below](#additional-configuration).
+This will create a config directory with a file named *deploy.rb*.  Edit this file, setting the location of your AWS key, AWS credentials, and chef cookbooks/data bags/roles/environments.  If your servers are in a region (or regions) other than us-east-1, then you'll need to set the region as [described below](#additional-configuration).
 
-Then, in AWS, create an [AWS instance tag](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html) named "Roles" for each instance, using a space separated list of chef roles as the value.  The "Name" tag must also be set or the instance will be ignored.
+Then, in AWS, create an [AWS instance tag](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html) named "Roles" for each instance, using a space separated list of chef roles as the value.  The "Name" tag must also be set or the instance will be ignored.  You can optionally set an "Environment" tag as well if you'd like chef [to use an environment](https://docs.chef.io/environments.html) for that server.
 
 Then, run:
 
@@ -167,8 +167,8 @@ cap databases open_ssh cook close_ssh
 Toquen can also drop off a config file meant for use by applications on your system.  Here's how that works:
 
 1. Toquen creates a hash that contains a list of all of your servers and all of their details (based on your servers data_bag)
-1. Toquen looks for a file named "apps.json" in your config folder, and if it's found, Toquen pulls out all of the keys that correspond with the server's roles and merges them together with the hash it's building (if this file contains secrets, consider *not* including in revision control)
-1. The resulting hash is dropped off in your user's home directory (this can be overridden with the apps_config_path config variable) with the filename "apps.json".
+1. Toquen looks for a file named "apps.json" in your config folder, and if it's found, Toquen pulls out all of the keys that correspond with the server's roles and environments, and then it merges them together with the hash it's building (if this file contains secrets, consider *not* including in revision control)
+1. The resulting hash is dropped off in your user's home directory (this can be overridden with the `apps_config_path` config variable) with the filename "apps.json".
 
 Most likely, you'll want to add this line to your deploy.rb:
 

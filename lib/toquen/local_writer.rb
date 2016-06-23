@@ -16,7 +16,10 @@ module Toquen
         secgroups = []
         servers.each { |details|
           rstring = (details[:roles] + [ "all", "server-#{details[:name]}" ]).join(' ')
-          f.write("server '#{details[:external_ip]}', roles: %w{#{rstring}}, awsname: '#{details[:name]}'\n")
+          f.write("server '#{details[:external_ip]}', ")
+          f.write("roles: %w{#{rstring}}, ")
+          f.write("environment: \"#{details[:environment]}\", ") unless details[:environment].nil?
+          f.write("awsname: '#{details[:name]}'\n")
           secgroups += details[:security_groups]
         }
         secstring = secgroups.uniq.join(' ')

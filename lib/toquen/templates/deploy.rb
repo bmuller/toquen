@@ -13,3 +13,6 @@ set :ssh_options, { :keys => ["./mykey.pem"], :user => "ubuntu" }
 set :chef_cookbooks_path, 'kitchen/cookbooks'
 set :chef_data_bags_path, 'kitchen/data_bags'
 set :chef_roles_path, 'kitchen/roles'
+
+# this directory should exist, even if empty
+set :chef_environments_path, 'kitchen/environment'
