@@ -116,6 +116,7 @@ task :update_kitchen do
   }
 
   on roles(:all), in: :parallel do |host|
+    sudo "chown -R #{user} #{fetch(:chef_upload_location)}"
     run_locally do
       info "Sending kitchen to #{host}..."
       keyoptions = keys.map { |key| "-i #{File.expand_path key}" }.join(' ')
