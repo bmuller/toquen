@@ -4,7 +4,7 @@
 **Toquen** combines [Capistrano 3](http://www.capistranorb.com), [Chef](http://www.getchef.com), and [AWS instance tags](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html) into one bundle of joy.  Instance roles are stored in AWS tags and **Toquen** can suck those out, put them into data bags for chef, and create stages in capistrano.  You can then selectively run chef on individual servers or whole roles that contain many servers with simple commands.
 
 ## Installation
-Before beginning, you should already understand how [chef-solo](http://docs.opscode.com/chef_solo.html) works and have some cookbooks, roles defined, and at least a folder for data_bags (even if it's empty).  The rest of this guide assumes you have these ready as well as an AWS PEM key and [access credentials](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html).
+Before beginning, you should already understand how [chef](https://docs.chef.io) works and have some cookbooks, roles defined, and at least a folder for data_bags (even if it's empty).  Toquen uses the chef-client in [local mode](https://docs.chef.io/ctl_chef_client.html#run-in-local-mode), which is worth understanding before diving into Toquen.  The rest of this guide assumes you have these ready as well as an AWS PEM key and [access credentials](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html).
 
 Generally, it's easiest if you start off in an empty directory.  First, create a file named *Gemfile* that contains these lines:
 
@@ -33,10 +33,10 @@ Then, in AWS, create an [AWS instance tag](http://docs.aws.amazon.com/AWSEC2/lat
 Then, run:
 
 ```shell
-cap update_roles
+cap update_nodes
 ```
 
-This will create a data_bag named *servers* in your data_bags path that contains one item per server name, as well as create stages per server and role for use in capistrano.
+This will write server information from AWS to [chef node](https://docs.chef.io/nodes.html) files and will create stages per server and role for use in capistrano.  By writing server information to node files, you'll be able to use [search](https://docs.chef.io/chef_search.html) in your recipes, allowing you to reference other nodes' locations and other metadata.
 
 ## Server Bootstrapping
 Bootstrapping a server will perform all of the following:
@@ -67,8 +67,8 @@ cap all bootstrap
 
 A lockfile is created after the first bootstrapping so that the full bootstrap process is only run once per server.
 
-## Running Chef-Solo
-You can run chef-solo for a single server by using:
+## Running the Chef Client
+You can run chef for a single server by using:
 
 ```shell
 cap server-<server name> cook
@@ -86,14 +86,14 @@ Or on all servers:
 cap all cook
 ```
 
-## Updating Roles
-If you change the roles of any servers on AWS (or add any new ones) you will need to run:
+## Updating Node Information
+If you change the roles (or any other metadata / ip addresses / etc) for any servers on AWS (or add any new ones) you will need to run:
 
 ```shell
-cap update_roles
+cap update_nodes
 ```
 
-This will update the *servers* data_bag as well as the capistrano stages.
+This will update the local node information cache as well as the capistrano stages.
 
 ## Additional Configuration
 If you want to use a different tag name (or you like commas as a delimiter) you can specify your own role extractor/setter by placing the following in either your Capfile or config/deploy.rb:

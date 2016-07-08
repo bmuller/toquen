@@ -5,8 +5,8 @@ require 'json'
 
 set :chef_upload_location, -> { "/home/#{fetch(:ssh_options)[:user]}" }
 
-desc "update local cache of servers and roles"
-task :update_roles do
+desc "update local cache of nodes and roles"
+task :update_nodes do
   load Pathname.new fetch(:deploy_config_path, 'config/deploy.rb')
   roles = Hash.new([])
   servers = []
@@ -15,7 +15,7 @@ task :update_roles do
   aws.server_details.each do |details|
     details[:roles].each { |role| roles[role] += [details] }
     roles['all'] += [details]
-    Toquen::LocalWriter.create_databag_item details
+    Toquen::LocalWriter.create_node details
     Toquen::LocalWriter.create_stage "server-#{details[:name]}", [details]
     servers << details[:name]
   end
@@ -97,22 +97,23 @@ task :update_kitchen do
 
   run_locally do
     info "Building kitchen locally..."
-    execute [
-      "rm -rf #{lkitchen}",
-      "mkdir -p #{lkitchen}",
-      "ln -s #{File.expand_path(fetch(:chef_cookbooks_path))} #{lkitchen}",
-      "ln -s #{File.expand_path(fetch(:chef_data_bags_path))} #{lkitchen}",
-      "ln -s #{File.expand_path(fetch(:chef_roles_path))} #{lkitchen}",
-      "ln -s #{File.expand_path(fetch(:chef_environments_path))} #{lkitchen}"
-    ].join(" && ")
+    execute :rm, "-rf", lkitchen
+    execute :mkdir, "-p", lkitchen
+    %W(cookbooks data_bags roles environments nodes).each do |dname|
+      source = File.expand_path fetch("chef_#{dname}_path".intern)
+      execute :ln, "-s", source, File.join(lkitchen, dname)
+    end
   end
 
   open("#{lkitchen}/chef_config.rb", 'w') { |f|
-    f.write("file_cache_path '/var/chef-solo'\n")
     f.write("cookbook_path '#{kitchen}/cookbooks'\n")
-    f.write("data_bag_path '#{kitchen}/data_bags'\n")
     f.write("role_path '#{kitchen}/roles'\n")
-    f.write("ssl_verify_mode :verify_peer\n")
+    f.write("data_bag_path '#{kitchen}/data_bags'\n")
+    f.write("environment_path '#{kitchen}/environments'\n")
+    f.write("node_path '#{kitchen}/nodes'\n")
+    f.write("log_level :#{fetch(:chef_log_level)}\n")
+    f.write("cache_path '/tmp/chef_cache'\n")
+    f.write("local_mode 'true'\n")
   }
 
   on roles(:all), in: :parallel do |host|
@@ -129,17 +130,9 @@ desc "Run chef for servers"
 task :cook do
   on roles(:all), in: :parallel do |host|
     info "Chef is now cooking on #{host}..."
-    env = host.properties.environment
-    roles = host.properties.roles.reject { |r| r.to_s.start_with?('server-') or r == :all }
-    roles = roles.map { |r| "\"role[#{r}]\"" }.join(',')
-    info "Roles for #{host}: #{roles}"
-    tfile = "chef.json"
-    upload! StringIO.new("{ \"run_list\": [ #{roles} ] }"), tfile
     within fetch(:chef_upload_location) do
-      args = ["-c #{fetch(:chef_upload_location)}/kitchen/chef_config.rb"]
-      args += ["-j #{tfile}"]
-      args += ["--environment #{env}"] unless env.nil?
-      execute "sudo chef-solo #{args.join(' ')}"
+      config = "#{fetch(:chef_upload_location)}/kitchen/chef_config.rb"
+      execute "sudo chef-client -c #{config}"
     end
   end
 end
@@ -256,7 +249,7 @@ module Capistrano
   module TaskEnhancements
     alias_method :original_default_tasks, :default_tasks
     def default_tasks
-      original_default_tasks + %w{toquen_install update_roles}
+      original_default_tasks + %w{toquen_install update_nodes}
     end
   end
 end

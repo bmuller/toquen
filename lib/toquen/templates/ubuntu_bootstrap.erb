@@ -12,9 +12,12 @@ DEBIAN_FRONTEND=noninteractive
 apt-get -y update && apt-get -y install software-properties-common
 apt-add-repository -y ppa:brightbox/ruby-ng
 
-# update apt, install ruby 2.3, upgrade everything
+# update apt, install ruby 2.2, upgrade everything
+# note: ruby2.3 is available, but shouldn't be installed
+#       until https://github.com/chef/chef/issues/4359 gets
+#       into a release version.
 apt-get -y update
-apt-get -y install build-essential ruby2.3 ruby2.3-dev
+apt-get -y install build-essential ruby2.2 ruby2.2-dev
 apt-get -y upgrade && apt-get -y dist-upgrade
 
 # install chef

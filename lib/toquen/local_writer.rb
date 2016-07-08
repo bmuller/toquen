@@ -1,10 +1,17 @@
 module Toquen
   module LocalWriter
-    def self.create_databag_item(details)
-      servers = "#{fetch(:chef_data_bags_path)}/servers"
-      FileUtils.mkdir_p servers
-      open("#{servers}/#{details[:name]}.json", 'w') do |f|
-        f.write JSON.dump(details)
+    def self.create_node(details)
+      FileUtils.mkdir_p fetch(:chef_nodes_path)
+      path = File.join(fetch(:chef_nodes_path), "#{details[:name]}.json")
+      existing = File.exists?(path) ? JSON.parse(File.read(path)) : {}
+      open(path, 'w') do |f|
+        node = {
+          name: details[:name],
+          chef_environment: details[:environment],
+          normal: { toquen: details },
+          run_list: details[:roles].map { |r| "role[#{r}]" }
+        }.merge(existing)
+        f.write JSON.pretty_generate(node)
       end
     end
 

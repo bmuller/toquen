@@ -9,10 +9,14 @@ set :aws_secret_access_key, nil
 # each server.
 set :ssh_options, { :keys => ["./mykey.pem"], :user => "ubuntu" }
 
-# Set the location of your cookbooks/data bags/roles for Chef
+# Set the location of your cookbooks/data bags/roles/nodes for Chef
 set :chef_cookbooks_path, 'kitchen/cookbooks'
 set :chef_data_bags_path, 'kitchen/data_bags'
 set :chef_roles_path, 'kitchen/roles'
+set :chef_nodes_path, 'kitchen/nodes'
 
 # this directory should exist, even if empty
 set :chef_environments_path, 'kitchen/environment'
+
+# log level for chef
+set :chef_log_level, :warn
