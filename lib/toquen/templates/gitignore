@@ -1,0 +1,3 @@
+config/deploy/*.rb
+kitchen/nodes/*.rb
+log/*.log

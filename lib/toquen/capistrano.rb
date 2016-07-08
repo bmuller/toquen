@@ -230,6 +230,14 @@ task :toquen_install do
     puts "Initializing config/deploy.rb configuration file..."
     FileUtils.cp File.expand_path("../templates/deploy.rb", __FILE__), 'config/deploy.rb'
   end
+  gipath = File.expand_path("../templates/gitignore", __FILE__)
+  if not File.exists?('.gitignore')
+    puts "Initializing .gitignore file..."
+    FileUtils.cp gipath, '.gitignore'
+  else
+    puts "You already have a .gitignore, consider adding these files to it:"
+    puts File.read(gipath)
+  end
 end
 
 desc "Show all information about EC2 instances"
