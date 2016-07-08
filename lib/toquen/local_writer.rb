@@ -6,12 +6,12 @@ module Toquen
       existing = File.exists?(path) ? JSON.parse(File.read(path)) : {}
       open(path, 'w') do |f|
         node = {
-          name: details[:name],
-          chef_environment: details[:environment],
-          normal: { toquen: details },
-          run_list: details[:roles].map { |r| "role[#{r}]" }
-        }.merge(existing)
-        f.write JSON.pretty_generate(node)
+          'name' => details[:name],
+          'chef_environment' => details[:environment],
+          'normal' => { toquen: details },
+          'run_list' => details[:roles].map { |r| "role[#{r}]" }
+        }
+        f.write JSON.pretty_generate(existing.merge(node))
       end
     end
 
