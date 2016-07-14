@@ -53,10 +53,10 @@ task :update_appconfig do
   if File.exists?('config/apps.json')
     apps = JSON.parse(File.read('config/apps.json'))
     config = { "_description" => "Dropped off by Toquen/Chef.", "servers" => [] }.merge(apps['default'] || {})
-    Dir.glob("#{fetch(:chef_data_bags_path)}/servers/*.json") do |fname|
+    Dir.glob("#{fetch(:chef_nodes_path)}/*.json") do |fname|
       open(fname, 'r') { |f| config['servers'] << JSON.parse(f.read) }
     end
-    dest = File.join fetch(:apps_config_path, "/home/#{fetch(:ssh_options)[:user]}"), "apps.json"
+    dest = fetch(:apps_config_path, "/home/#{fetch(:ssh_options)[:user]}/apps.json")
 
     on roles(:all), in: :parallel do |host|
       appconfig = Marshal.load(Marshal.dump(config))

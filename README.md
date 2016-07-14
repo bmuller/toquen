@@ -168,7 +168,7 @@ Toquen can also drop off a config file meant for use by applications on your sys
 
 1. Toquen creates a hash that contains a list of all of your servers and all of their details (based on your servers data_bag)
 1. Toquen looks for a file named "apps.json" in your config folder, and if it's found, Toquen pulls out all of the keys that correspond with the server's roles and environments, and then it merges them together with the hash it's building (if this file contains secrets, consider *not* including in revision control)
-1. The resulting hash is dropped off in your user's home directory (this can be overridden with the `apps_config_path` config variable) with the filename "apps.json".
+1. The resulting hash is dropped off in your user's home directory with the filename "apps.json" (this can be overridden with the `apps_config_path` config variable).
 
 Most likely, you'll want to add this line to your deploy.rb:
 
