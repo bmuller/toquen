@@ -7,7 +7,7 @@ set :aws_secret_access_key, nil
 # Set the location of your SSH key.  You can give a list of files, but
 # the first key given will be the one used to upload your chef files to
 # each server.
-set :ssh_options, { :keys => ["./mykey.pem"], :user => "ubuntu" }
+set :ssh_options, keys: ['./mykey.pem'], user: 'ubuntu'
 
 # Set the location of your cookbooks/data bags/roles/nodes for Chef
 set :chef_cookbooks_path, 'kitchen/cookbooks'

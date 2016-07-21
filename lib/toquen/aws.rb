@@ -1,5 +1,6 @@
-require 'aws'
+require 'aws-sdk'
 
+# Top level module namespace
 module Toquen
   def self.servers_with_role(role)
     Toquen::AWSProxy.new.server_details.select do |details|
@@ -7,109 +8,101 @@ module Toquen
     end
   end
 
+  # Class to handle all interaction with AWS
   class AWSProxy
     attr_reader :regions
 
     def initialize
-      @key_id = fetch(:aws_access_key_id)
-      @key = fetch(:aws_secret_access_key)
       @regions = fetch(:aws_regions, ['us-east-1'])
-      AWS.config(:access_key_id => @key_id, :secret_access_key => @key)
+      key = fetch(:aws_access_key_id)
+      key_id = fetch(:aws_secret_access_key)
+      creds = Aws::Credentials.new(key, key_id)
+      Aws.config.update(credentials: creds) if creds.set?
     end
 
-    def server_details
-      filter @regions.map { |region| server_details_in(region) }.flatten
+    def server_details(running = true, regions = nil)
+      each_instance(running, regions) { |inst| extract_details(inst) }
     end
 
-    def filter(details)
-      details.select { |detail|
-        not detail[:name].nil? and detail[:roles].length > 0
-      }
+    def each_instance(running = true, regions = nil)
+      filters = []
+      filters << { name: 'instance-state-name', values: ['running'] } if running
+
+      results = []
+      (regions || @regions).each do |region|
+        resource = Aws::EC2::Resource.new(region: region)
+        results += resource.instances.map { |i| yield(i) }
+      end
+      results
     end
 
     def add_role(ivips, role)
-      @regions.each do |region|
-        AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
-        ec2 = AWS::EC2.new
-        ec2.instances.map do |i|
-          if ivips.include? i.public_ip_address
-            roles = Toquen.config.aws_roles_extractor.call(i)
-            unless roles.include? role
-              roles << role
-              ec2.tags.create(i, 'Roles', :value => roles.uniq.sort.join(' '))
-            end
-          end
-        end
+      each_instance do |i|
+        roles = extract_details(i)[:roles]
+        next unless !roles.include?(role) && ivips.include?(i.public_ip_address)
+        roles << role
+        tag = { key: 'Roles', value: roles.uniq.sort.join(' ') }
+        i.create_tags(tags: [tag])
       end
     end
 
     def remove_role(ivips, role)
-      @regions.each do |region|
-        AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
-        ec2 = AWS::EC2.new
-        ec2.instances.map do |i|
-          if ivips.include? i.public_ip_address
-            roles = Toquen.config.aws_roles_extractor.call(i)
-            if roles.include? role
-              roles = roles.reject { |r| r == role }
-              Toquen.config.aws_roles_setter.call(ec2, i, roles.uniq)
-            end
-          end
-        end
+      each_instance do |i|
+        roles = extract_details(i)[:roles]
+        next unless roles.include?(role) && ivips.include?(i.public_ip_address)
+        roles.reject! { |r| r == role }
+        tag = { key: 'Roles', value: roles.uniq.sort.join(' ') }
+        i.create_tags(tags: [tag])
       end
     end
 
     def get_security_groups(ids)
-      result = []
       @regions.map do |region|
-        AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
-        AWS.memoize do
-          ectwo = AWS::EC2.new
-          ectwo.security_groups.each { |sg| result << sg if ids.include? sg.id }
-        end
-      end
-      result
+        sgs = Aws::EC2::Resource.new(region: region).security_groups
+        sgs.select { |sg| ids.include? sg.group_id }
+      end.flatten
     end
 
     def authorize_ingress(secgroup, protocol, port, ip)
       # test if exists first
-      return false if secgroup.ingress_ip_permissions.to_a.select { |p|
-        p.protocol == protocol and p.port_range.include?(port) and p.ip_ranges.include?(ip)
-      }.length > 0
+      return false unless secgroup.ip_permissions.to_a.select do |p|
+        port_match = ((p.from_port)..(p.to_port)).cover? port
+        ip_match = p.ip_ranges.map(&:cidr_ip).include?(ip)
+        p.ip_protocol == protocol && port_match && ip_match
+      end.empty?
 
-      secgroup.authorize_ingress(protocol, port, ip)
+      secgroup.authorize_ingress(ip_protocol: protocol, from_port: port,
+                                 to_port: port, cidr_ip: ip)
       true
     end
 
     def revoke_ingress(secgroup, protocol, port, ip)
       # test if exists first
-      return false unless secgroup.ingress_ip_permissions.to_a.select { |p|
-        p.protocol == protocol and p.port_range.include?(port) and p.ip_ranges.include?(ip)
-      }.length > 0
+      return false if secgroup.ip_permissions.to_a.select do |p|
+        port_match = ((p.from_port)..(p.to_port)).cover? port
+        ip_match = p.ip_ranges.map(&:cidr_ip).include?(ip)
+        p.ip_protocol == protocol && port_match && ip_match
+      end.empty?
 
-      secgroup.revoke_ingress(protocol, port, ip)
+      secgroup.revoke_ingress(ip_protocol: protocol, from_port: port,
+                              to_port: port, cidr_ip: ip)
       true
     end
 
-    def server_details_in(region)
-      AWS.config(:access_key_id => @key_id, :secret_access_key => @key, :region => region)
-      AWS.memoize do
-        AWS::EC2.new.instances.filter("instance-state-name", "running").map do |i|
-          {
-            :id => i.tags["Name"],
-            :internal_ip => i.private_ip_address,
-            :external_ip => i.public_ip_address,
-            :name => i.tags["Name"],
-            :roles => Toquen.config.aws_roles_extractor.call(i),
-            :type => i.instance_type,
-            :external_dns => i.public_dns_name,
-            :internal_dns => i.private_dns_name,
-            :security_groups => i.security_groups.to_a.map(&:id),
-            :environment => i.tags["Environment"] || nil
-          }
-        end
-      end
+    def extract_details(instance)
+      tags = instance.tags.each_with_object({}) { |t, h| h[t.key] = t.value }
+      {
+        id: tags['Name'],
+        name: tags['Name'],
+        type: instance.instance_type,
+        environment: tags['Environment'],
+        internal_ip: instance.private_ip_address,
+        external_ip: instance.public_ip_address,
+        external_dns: instance.public_dns_name,
+        internal_dns: instance.private_dns_name,
+        roles: tags.fetch('Roles', '').split,
+        security_groups: instance.security_groups.map(&:group_id)
+      }
     end
-
   end
 end

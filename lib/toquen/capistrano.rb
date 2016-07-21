@@ -5,14 +5,14 @@ require 'json'
 
 set :chef_upload_location, -> { "/home/#{fetch(:ssh_options)[:user]}" }
 
-desc "update local cache of nodes and roles"
+desc 'update local cache of nodes and roles'
 task :update_nodes do
   load Pathname.new fetch(:deploy_config_path, 'config/deploy.rb')
   roles = Hash.new([])
   servers = []
 
   aws = Toquen::AWSProxy.new
-  aws.server_details.each do |details|
+  aws.server_details.reject { |d| d[:roles].empty? }.each do |details|
     details[:roles].each { |role| roles[role] += [details] }
     roles['all'] += [details]
     Toquen::LocalWriter.create_node details
@@ -26,7 +26,7 @@ task :update_nodes do
   Toquen::LocalWriter.superfluous_check!(servers, roles.keys)
 end
 
-desc "SSH into a specific server"
+desc 'SSH into a specific server'
 task :ssh do
   hosts = []
   on roles(:all) do |host|
@@ -34,10 +34,10 @@ task :ssh do
   end
 
   run_locally do
-    if hosts.length == 0
-      warn "No server matched that role"
+    if hosts.empty?
+      warn 'No server matched that role'
     elsif hosts.length > 1
-      warn "More than one server matched that role"
+      warn 'More than one server matched that role'
     else
       keys = fetch(:ssh_options)[:keys]
       keyoptions = keys.map { |key| "-i #{key}" }.join(' ')
@@ -48,11 +48,11 @@ task :ssh do
   end
 end
 
-desc "send up apps.json config file"
+desc 'send up apps.json config file'
 task :update_appconfig do
-  if File.exists?('config/apps.json')
+  if File.exist?('config/apps.json')
     apps = JSON.parse(File.read('config/apps.json'))
-    config = { "_description" => "Dropped off by Toquen/Chef.", "servers" => [] }.merge(apps['default'] || {})
+    config = { '_description' => 'Dropped off by Toquen/Chef.', 'servers' => [] }.merge(apps['default'] || {})
     Dir.glob("#{fetch(:chef_nodes_path)}/*.json") do |fname|
       open(fname, 'r') { |f| config['servers'] << JSON.parse(f.read) }
     end
@@ -67,18 +67,18 @@ task :update_appconfig do
         appconfig.merge!(apps[host.properties.environment.to_s] || {})
       end
       debug "Uploading app config file to #{dest}"
-      upload! StringIO.new(JSON.pretty_generate(appconfig)), "/tmp/apps.json"
+      upload! StringIO.new(JSON.pretty_generate(appconfig)), '/tmp/apps.json'
       sudo "mv /tmp/apps.json #{dest}"
       sudo "chmod 755 #{dest}"
     end
   else
-    run_locally {
-      error "No config/apps.json file found."
-    }
+    run_locally do
+      error 'No config/apps.json file found.'
+    end
   end
 end
 
-desc "bootstrap a server so that it can run chef"
+desc 'bootstrap a server so that it can run chef'
 task :bootstrap do
   on roles(:all), in: :parallel do |host|
     info "Bootstrapping #{host}..."
@@ -88,24 +88,24 @@ task :bootstrap do
   end
 end
 
-desc "Update cookbooks/data bags/roles on server"
+desc 'Update cookbooks/data bags/roles on server'
 task :update_kitchen do
   kitchen = "#{fetch(:chef_upload_location)}/kitchen"
-  lkitchen = "/tmp/toquen/kitchen"
+  lkitchen = '/tmp/toquen/kitchen'
   user = fetch(:ssh_options)[:user]
   keys = fetch(:ssh_options)[:keys]
 
   run_locally do
-    info "Building kitchen locally..."
-    execute :rm, "-rf", lkitchen
-    execute :mkdir, "-p", lkitchen
-    %W(cookbooks data_bags roles environments nodes).each do |dname|
+    info 'Building kitchen locally...'
+    execute :rm, '-rf', lkitchen
+    execute :mkdir, '-p', lkitchen
+    %w(cookbooks data_bags roles environments nodes).each do |dname|
       source = File.expand_path fetch("chef_#{dname}_path".intern)
-      execute :ln, "-s", source, File.join(lkitchen, dname)
+      execute :ln, '-s', source, File.join(lkitchen, dname)
     end
   end
 
-  open("#{lkitchen}/chef_config.rb", 'w') { |f|
+  open("#{lkitchen}/chef_config.rb", 'w') do |f|
     f.write("cookbook_path '#{kitchen}/cookbooks'\n")
     f.write("role_path '#{kitchen}/roles'\n")
     f.write("data_bag_path '#{kitchen}/data_bags'\n")
@@ -114,7 +114,7 @@ task :update_kitchen do
     f.write("log_level :#{fetch(:chef_log_level)}\n")
     f.write("cache_path '/tmp/chef_cache'\n")
     f.write("local_mode 'true'\n")
-  }
+  end
 
   on roles(:all), in: :parallel do |host|
     sudo "chown -R #{user} #{fetch(:chef_upload_location)}"
@@ -126,7 +126,7 @@ task :update_kitchen do
   end
 end
 
-desc "Run chef for servers"
+desc 'Run chef for servers'
 task :cook do
   on roles(:all), in: :parallel do |host|
     info "Chef is now cooking on #{host}..."
@@ -138,11 +138,11 @@ task :cook do
 end
 before :cook, :update_kitchen
 
-desc "Add given role to machines"
-task :add_role, :role do |t, args|
+desc 'Add given role to machines'
+task :add_role, :role do |_t, args|
   run_locally do
-    if args[:role].nil? or args[:role].empty?
-      error "You must give the role to add"
+    if args[:role].nil? || args[:role].empty?
+      error 'You must give the role to add'
     else
       aws = Toquen::AWSProxy.new
       aws.add_role roles(:all), args[:role]
@@ -150,11 +150,11 @@ task :add_role, :role do |t, args|
   end
 end
 
-desc "Remove given role from machines"
-task :remove_role, :role do |t, args|
+desc 'Remove given role from machines'
+task :remove_role, :role do |_t, args|
   run_locally do
-    if args[:role].nil? or args[:role].empty?
-      error "You must give the role to remove"
+    if args[:role].nil? || args[:role].empty?
+      error 'You must give the role to remove'
     else
       aws = Toquen::AWSProxy.new
       aws.remove_role roles(:all), args[:role]
@@ -162,102 +162,102 @@ task :remove_role, :role do |t, args|
   end
 end
 
-desc "Open a port of ingress to the current machine"
-task :open_port, :port do |t, args|
+desc 'Open a port of ingress to the current machine'
+task :open_port, :port do |_t, args|
   port = (args[:port] || 22).to_i
   run_locally do
     ivip = StunClient.get_ip
     if ivip.nil?
-      error "Could not fetch internet visible IP of this host."
+      error 'Could not fetch internet visible IP of this host.'
       return
     end
 
     ivip = "#{ivip}/32"
     aws = Toquen::AWSProxy.new
     aws.get_security_groups(fetch(:filter)[:secgroups]).each do |sg|
-      if aws.authorize_ingress sg, :tcp, port, ivip
-        info "Opened port tcp:#{port} on security group '#{sg.name}' (#{sg.id}) to #{ivip}"
+      if aws.authorize_ingress sg, 'tcp', port, ivip
+        info "Opened port tcp:#{port} on security group '#{sg.group_name}' (#{sg.id}) to #{ivip}"
       else
-        warn "Port tcp:#{port} in security group '#{sg.name}' (#{sg.id}) already open to #{ivip}"
+        warn "Port tcp:#{port} in security group '#{sg.group_name}' (#{sg.id}) already open to #{ivip}"
       end
     end
   end
 end
 
-desc "Close a port of ingress to the current machine"
-task :close_port, :port do |t, args|
+desc 'Close a port of ingress to the current machine'
+task :close_port, :port do |_t, args|
   port = (args[:port] || 22).to_i
   run_locally do
     ivip = StunClient.get_ip
     if ivip.nil?
-      error "Could not fetch internet visible IP of this host."
+      error 'Could not fetch internet visible IP of this host.'
       return
     end
 
     ivip = "#{ivip}/32"
     aws = Toquen::AWSProxy.new
     aws.get_security_groups(fetch(:filter)[:secgroups]).each do |sg|
-      if aws.revoke_ingress sg, :tcp, port, ivip
-        info "Closed port tcp:#{port} on security group '#{sg.name}' (#{sg.id}) to #{ivip}"
+      if aws.revoke_ingress sg, 'tcp', port, ivip
+        info "Closed port tcp:#{port} on security group '#{sg.group_name}' (#{sg.id}) to #{ivip}"
       else
-        warn "Port tcp:#{port} in security group '#{sg.name}' (#{sg.id}) already closed to #{ivip}"
+        warn "Port tcp:#{port} in security group '#{sg.group_name}' (#{sg.id}) already closed to #{ivip}"
       end
     end
   end
 end
 
-desc "Open SSH ingress to current machine"
+desc 'Open SSH ingress to current machine'
 task :open_ssh do
-  invoke "open_port", "22"
+  invoke 'open_port', '22'
 end
 
-desc "Close SSH ingress to current machine"
+desc 'Close SSH ingress to current machine'
 task :close_ssh do
-  invoke "close_port", "22"
+  invoke 'close_port', '22'
 end
 
-desc "install toquen capistrano setup to current directory"
+desc 'install toquen capistrano setup to current directory'
 task :toquen_install do
-  unless Dir.exists?('config')
-    puts "Creating config directory..."
+  unless Dir.exist?('config')
+    puts 'Creating config directory...'
     Dir.mkdir('config')
   end
-  unless Dir.exists?('config/deploy')
-    puts "Creating config/deploy directory..."
+  unless Dir.exist?('config/deploy')
+    puts 'Creating config/deploy directory...'
     Dir.mkdir('config/deploy')
   end
-  if not File.exists?('config/deploy.rb')
-    puts "Initializing config/deploy.rb configuration file..."
-    FileUtils.cp File.expand_path("../templates/deploy.rb", __FILE__), 'config/deploy.rb'
+  unless File.exist?('config/deploy.rb')
+    puts 'Initializing config/deploy.rb configuration file...'
+    FileUtils.cp File.expand_path('../templates/deploy.rb', __FILE__), 'config/deploy.rb'
   end
-  gipath = File.expand_path("../templates/gitignore", __FILE__)
-  if not File.exists?('.gitignore')
-    puts "Initializing .gitignore file..."
+  gipath = File.expand_path('../templates/gitignore', __FILE__)
+  if !File.exist?('.gitignore')
+    puts 'Initializing .gitignore file...'
     FileUtils.cp gipath, '.gitignore'
   else
-    puts "You already have a .gitignore, consider adding these files to it:"
+    puts 'You already have a .gitignore, consider adding these files to it:'
     puts File.read(gipath)
   end
 end
 
-desc "Show all information about EC2 instances"
+desc 'Show all information about EC2 instances'
 task :details do
   filter_roles = Set.new fetch(:filter)[:roles]
   aws = Toquen::AWSProxy.new
   aws.regions.each do |region|
-    instances = aws.server_details_in(region).reject do |instance|
-      instance_roles = instance[:roles] + ["all", "server-#{instance[:name]}"]
+    instances = aws.server_details(true, [region]).reject do |instance|
+      instance_roles = instance[:roles] + ['all', "server-#{instance[:name]}"]
       (filter_roles.intersection instance_roles.to_set).empty?
     end
     Toquen::DetailsTable.new(instances, region).output unless instances.empty?
   end
 end
-  
+
 module Capistrano
   module TaskEnhancements
-    alias_method :original_default_tasks, :default_tasks
+    alias original_default_tasks default_tasks
     def default_tasks
-      original_default_tasks + %w{toquen_install update_nodes}
+      original_default_tasks + %w(toquen_install update_nodes)
     end
   end
 end

@@ -96,13 +96,6 @@ cap update_nodes
 This will update the local node information cache as well as the capistrano stages.
 
 ## Additional Configuration
-If you want to use a different tag name (or you like commas as a delimiter) you can specify your own role extractor/setter by placing the following in either your Capfile or config/deploy.rb:
-
-```ruby
-# these are the default - replace with your own
-Toquen.config.aws_roles_extractor = lambda { |inst| (inst.tags["MyRoles"] || "").split(",") }
-Toquen.config.aws_roles_setter = lambda { |ec2, inst, roles| ec2.tags.create(inst, 'Roles', :value => roles.sort.join(' ')) }
-```
 
 By default, instance information is only pulled out of the default region (us-east-1), but you can specify mutiple alternative regions:
 
