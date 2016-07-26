@@ -28,7 +28,7 @@ module Toquen
 
     def instance_to_row(instance)
       [
-        @color.green { instance[:name] },
+        @color.green { instance[:name] || 'No Name' },
         @color.yellow { instance[:roles].join(',') },
         @color.magenta { instance[:environment] || '' },
         instance[:external_dns].nil? ? '(N/A)' : @color.cyan(instance[:external_dns]) + " (#{instance[:external_ip]})",
